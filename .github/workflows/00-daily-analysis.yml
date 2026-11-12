@@ -33,6 +33,8 @@ concurrency:
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     # 相容誤將 STOCK_LIST 配到同名 Environment variables 的場景；
     # 推薦位置仍是 Settings -> Secrets and variables -> Actions -> Repository variables。
     environment: STOCK_LIST
@@ -59,6 +61,21 @@ jobs:
           pip install opencc-python-reimplemented
           python -c "import futu; print('✅ futu SDK import OK')"
       
+      - name: 先處理 Telegram 的 /add /del 指令
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python tg_watchlist.py
+          if [ -n "$(git status --porcelain stock_list.txt .tg_offset)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add stock_list.txt .tg_offset
+            git commit -m "Telegram 更新分析清單 [skip ci]"
+            git pull --rebase && git push
+          fi
+
       - name: 建立必要目錄
         run: |
           mkdir -p data logs reports
