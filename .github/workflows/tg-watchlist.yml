@@ -1,9 +1,9 @@
 name: Telegram 分析清單
 
 on:
-  # 每 30 分鐘檢查一次 Telegram 指令（GitHub 排程可能延遲幾分鐘）
+  # 每 30 分鐘檢查一次 Telegram 指令（避開整點/半點，比較不會被 GitHub 跳過）
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '7,37 * * * *'
   workflow_dispatch:
 
 permissions:
