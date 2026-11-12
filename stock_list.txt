@@ -1,0 +1,10 @@
+# 由 Telegram 指令管理（/add /del /list），也可以直接編輯，一行一檔
+2221.TWO
+2643.TWO
+5202.TWO
+5209.TWO
+5465.TWO
+5490.TWO
+6291.TWO
+7767.TWO
+8432.TWO
