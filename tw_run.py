@@ -13,10 +13,6 @@ log = logging.getLogger("tw_run")
 
 # 備用名稱表（抓不到證交所/櫃買中心資料時使用）
 TW_NAMES = {
-    "1232": "大統益", "1476": "儒鴻", "1558": "伸興", "1795": "美時", "2303": "聯電",
-    "2330": "台積電", "2453": "凌群", "2467": "志聖", "2610": "華航", "2618": "長榮航",
-    "3703": "欣陸", "4755": "三福化", "6152": "百一", "9926": "新海",
-    "00631L": "元大台灣50正2", "00830": "國泰費城半導體",
     "2221": "大甲", "2643": "捷迅", "5202": "力新", "5209": "新鼎", "5465": "富驊",
     "5490": "同亨", "6291": "沛亨", "7767": "仁大資訊", "8432": "東生華",
 }
@@ -118,8 +114,44 @@ def _patch():
         def get_stock_name(self, stock_code, *a, **kw):
             return tw_name(stock_code) or orig_n(self, stock_code, *a, **kw)
         base.DataFetcherManager.get_stock_name = get_stock_name
+
+        # 任何資料源回來的即時行情，台股一律換成中文名
+        orig_rq = base.DataFetcherManager.get_realtime_quote
+
+        def get_realtime_quote_mgr(self, stock_code, *a, **kw):
+            q = orig_rq(self, stock_code, *a, **kw)
+            n = tw_name(stock_code)
+            if q is not None and n:
+                try:
+                    q.name = n
+                except Exception:  # noqa: BLE001
+                    pass
+            return q
+        base.DataFetcherManager.get_realtime_quote = get_realtime_quote_mgr
     except Exception as e:  # noqa: BLE001
         print(f"[tw_run] get_stock_name 修補失敗: {e}")
+
+    # 3b) 最後一道保險：分析結果物件的名稱一律用中文
+    try:
+        from src import analyzer as _an
+        _cls = _an.AnalysisResult
+        _orig_setattr = _cls.__setattr__
+
+        def _setattr(self, key, value):
+            if key == "name":
+                n = tw_name(getattr(self, "code", None))
+                if n:
+                    value = n
+            elif key == "code":
+                _orig_setattr(self, key, value)
+                n = tw_name(value)
+                if n:
+                    _orig_setattr(self, "name", n)
+                return
+            _orig_setattr(self, key, value)
+        _cls.__setattr__ = _setattr
+    except Exception as e:  # noqa: BLE001
+        print(f"[tw_run] AnalysisResult 名稱修補失敗: {e}")
 
     # 4) analyzer.get_stock_name_multi_source
     try:
