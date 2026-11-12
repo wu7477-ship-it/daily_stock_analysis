@@ -458,6 +458,11 @@ jobs:
           # 1. Repository/Environment secrets 或 Repository variables（STOCK_LIST_CONFIG）
           # 2. 同名 Environment variables 注入的 runner 環境變數（STOCK_LIST）
           # 3. 最小預設值
+          # 0. Telegram 管理的 stock_list.txt 優先（/add /del /list）
+          if [ -s stock_list.txt ]; then
+            STOCK_LIST_FILE="$(grep -v '^#' stock_list.txt | tr -s ' ,\r\n' ',' | sed 's/^,//;s/,$//')"
+            [ -n "$STOCK_LIST_FILE" ] && STOCK_LIST_CONFIG="$STOCK_LIST_FILE"
+          fi
           if [ -n "${STOCK_LIST_CONFIG:-}" ]; then
             export STOCK_LIST="$STOCK_LIST_CONFIG"
           elif [ -z "${STOCK_LIST:-}" ]; then
