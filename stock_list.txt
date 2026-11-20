@@ -1,3 +1,4 @@
 # 由 Telegram 指令管理（/add /del /list），也可以直接編輯，一行一檔
 1323.TW
 6782.TW
+3570.TWO
